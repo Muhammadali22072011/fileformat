@@ -1,0 +1,867 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивный тест по Microsoft Word</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="Одностраничный интерактивный тест по Microsoft Word: 30 вопросов, мгновенная проверка, обзор ошибок, таймер, прогресс."/>
+  <style>
+    /* Доп. мелочи под Tailwind */
+    .gradient-bg { background: radial-gradient(1200px 600px at 10% 10%, rgba(79,70,229,.15), transparent),
+                                 radial-gradient(1000px 600px at 90% 20%, rgba(236,72,153,.15), transparent),
+                                 radial-gradient(1000px 600px at 30% 90%, rgba(20,184,166,.15), transparent); }
+    .glass { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+    
+    /* Красивый таймер с анимацией */
+    .timer-container {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%);
+      border: 2px solid rgba(139, 92, 246, 0.3);
+      box-shadow: 0 8px 32px rgba(139, 92, 246, 0.2);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .timer-container::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(45deg, transparent, rgba(168, 85, 247, 0.1), transparent);
+      animation: timerShine 3s linear infinite;
+    }
+    
+    @keyframes timerShine {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    
+    .timer-text {
+      background: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 900;
+      text-shadow: 0 0 30px rgba(168, 85, 247, 0.5);
+      position: relative;
+      z-index: 1;
+    }
+    
+    .timer-warning {
+      animation: timerPulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes timerPulse {
+      0%, 100% { 
+        transform: scale(1);
+        opacity: 1;
+      }
+      50% { 
+        transform: scale(1.05);
+        opacity: 0.9;
+      }
+    }
+    
+    .timer-label {
+      background: rgba(139, 92, 246, 0.2);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      position: relative;
+      z-index: 1;
+    }
+    
+    /* Красивая финальная заставка */
+    @keyframes confetti-fall {
+      0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0.3; }
+    }
+    
+    @keyframes bounce-in {
+      0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+      50% { transform: scale(1.2) rotate(10deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    
+    @keyframes slide-up {
+      0% { transform: translateY(50px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+      50% { box-shadow: 0 0 40px rgba(99, 102, 241, 0.8), 0 0 60px rgba(168, 85, 247, 0.5); }
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(5deg); }
+    }
+    
+    .confetti {
+      position: fixed;
+      width: 10px;
+      height: 10px;
+      z-index: 1000;
+      pointer-events: none;
+      animation: confetti-fall 3s linear forwards;
+    }
+    
+    .result-trophy {
+      animation: bounce-in 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      filter: drop-shadow(0 10px 30px rgba(99, 102, 241, 0.5));
+    }
+    
+    .result-card {
+      animation: slide-up 0.6s ease-out forwards;
+      animation-delay: 0.3s;
+      opacity: 0;
+    }
+    
+    .result-stats {
+      animation: slide-up 0.6s ease-out forwards;
+      animation-delay: 0.5s;
+      opacity: 0;
+    }
+    
+    .result-actions {
+      animation: slide-up 0.6s ease-out forwards;
+      animation-delay: 0.7s;
+      opacity: 0;
+    }
+    
+    .result-perfect {
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%);
+      animation: pulse-glow 2s ease-in-out infinite;
+    }
+    
+    .result-good {
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(99, 102, 241, 0.2) 100%);
+    }
+    
+    .result-poor {
+      background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(249, 115, 22, 0.2) 100%);
+    }
+    
+    .trophy-icon {
+      animation: float 3s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="min-h-screen gradient-bg text-slate-100">
+  <!-- Shell -->
+  <div class="max-w-5xl mx-auto px-4 py-10">
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-3">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-8 h-8 text-indigo-400">
+          <path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h15A1.5 1.5 0 0 1 21 4.5v15a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 19.5v-15Z"/>
+        </svg>
+        <h1 class="text-2xl sm:text-3xl font-black tracking-tight">Microsoft Word — интерактивный тест</h1>
+      </div>
+      <span class="text-xs sm:text-sm text-slate-300">Single-file • TailwindCSS • Vanilla JS</span>
+    </header>
+
+    <!-- Card -->
+    <main class="glass bg-white/10 border border-white/10 rounded-2xl shadow-2xl">
+      <!-- Toolbar -->
+      <div class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6 border-b border-white/10">
+        <div class="flex items-center gap-3">
+          <span class="text-xs uppercase tracking-widest text-slate-300">РЕЖИМ</span>
+          <div class="inline-flex rounded-xl overflow-hidden border border-white/10">
+            <button id="modeTest" class="px-3 py-1.5 text-sm bg-white/10 hover:bg-white/20 transition">Тест</button>
+            <button id="modePractice" class="px-3 py-1.5 text-sm hover:bg-white/10 transition">Тренировка</button>
+          </div>
+        </div>
+        <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2"><span class="text-xs text-slate-300">Таймер</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" value="" class="sr-only peer" id="timerToggle">
+              <div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-400/40"></div>
+            </label>
+          </div>
+          <button id="btnReset" class="text-sm px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10">Сброс</button>
+        </div>
+      </div>
+
+      <!-- Start screen -->
+      <section id="startScreen" class="p-6 sm:p-10">
+        <div class="grid sm:grid-cols-2 gap-6 items-center">
+          <div>
+            <h2 class="text-xl sm:text-2xl font-bold">Что внутри</h2>
+            <ul class="mt-4 text-slate-200/90 space-y-2 list-disc list-inside">
+              <li>30 вопросов про форматы файлов Microsoft Word</li>
+              <li>Два режима: <span class="font-semibold">Тест</span> (оценка) и <span class="font-semibold">Тренировка</span> (объяснения сразу)</li>
+              <li>Прогресс‑бар, подсветка ответов, обзор ошибок</li>
+              <li>Не требует серверной части — один <code>index.html</code></li>
+            </ul>
+            <div class="mt-6 flex flex-wrap gap-3">
+              <button id="btnStart" class="px-5 py-3 rounded-2xl bg-indigo-500 hover:bg-indigo-600 font-semibold shadow-lg">
+                Начать
+              </button>
+              <button id="btnShuffle" class="px-5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/10">
+                Перемешать вопросы
+              </button>
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-6">
+            <h3 class="font-semibold mb-2">Быстрые настройки</h3>
+            <label class="block text-sm mb-3">Количество вопросов
+              <input id="qCountInput" type="number" min="5" max="30" value="30" class="mt-1 w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2"/>
+            </label>
+            <label class="block text-sm mb-3">Ограничение на вопрос (сек)
+              <input id="qTimeInput" type="number" min="10" max="180" value="45" class="mt-1 w-full bg-white/10 border border-white/10 rounded-xl px-3 py-2"/>
+            </label>
+            <p class="text-xs text-slate-300">Подсказка: в тренировочном режиме объяснение показывается сразу после выбора.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quiz screen -->
+      <section id="quizScreen" class="hidden">
+        <!-- Progress & stats -->
+        <div class="p-4 sm:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4">
+          <div class="w-full sm:flex-1">
+            <div class="h-3 bg-white/5 rounded-full overflow-hidden">
+              <div id="progressBar" class="h-3 bg-indigo-500 transition-all" style="width:0%"></div>
+            </div>
+            <div class="mt-2 text-xs text-slate-300"><span id="progressText">0 / 0</span></div>
+          </div>
+          <div class="flex items-center gap-6">
+            <div class="text-center">
+              <div class="text-2xl font-bold" id="scoreText">0</div>
+              <div class="text-xs text-slate-300">Баллы</div>
+            </div>
+            <div class="timer-container text-center rounded-2xl px-6 py-3 min-w-[120px]">
+              <div class="text-3xl font-black timer-text" id="timerText">—</div>
+              <div class="timer-label mt-1">Секунд</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Q/A card -->
+        <div class="p-6 sm:p-10 space-y-6">
+          <div>
+            <div class="text-xs uppercase tracking-widest text-slate-300 mb-1">Вопрос</div>
+            <h2 id="questionText" class="text-xl sm:text-2xl font-bold">—</h2>
+          </div>
+
+          <div id="options" class="grid sm:grid-cols-2 gap-3"></div>
+
+          <div id="explanation" class="hidden rounded-2xl bg-emerald-400/10 border border-emerald-400/20 p-4 text-sm"></div>
+
+          <div class="flex flex-wrap gap-3 pt-4 border-t border-white/10">
+            <button id="btnPrev" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10">Назад</button>
+            <button id="btnNext" class="px-4 py-2 rounded-xl bg-indigo-500 hover:bg-indigo-600 font-semibold">Далее</button>
+            <button id="btnSkip" class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10">Пропустить</button>
+            <button id="btnReveal" class="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-400/30">Показать ответ</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Results screen -->
+      <section id="resultsScreen" class="hidden p-6 sm:p-10">
+        <!-- Главный результат с трофеем -->
+        <div class="text-center mb-8">
+          <div class="result-trophy inline-block mb-4">
+            <div id="trophyIcon" class="trophy-icon text-8xl sm:text-9xl">🏆</div>
+          </div>
+          <h2 id="resultTitle" class="text-3xl sm:text-5xl font-black mb-3 bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Отличная работа!
+          </h2>
+          <p class="text-xl sm:text-2xl text-slate-200/90 font-semibold mb-2" id="resultSummary">—</p>
+          <p id="resultMessage" class="text-slate-300 text-lg">Продолжайте в том же духе!</p>
+        </div>
+
+        <!-- Статистика -->
+        <div class="result-stats grid sm:grid-cols-3 gap-4 mb-8">
+          <div id="statsCard" class="rounded-2xl border border-white/20 p-6 text-center backdrop-blur-sm">
+            <div class="text-6xl sm:text-7xl font-black bg-gradient-to-br from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-2" id="resCorrect">0</div>
+            <div class="text-sm uppercase tracking-widest text-slate-300">Правильных</div>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-6 text-center">
+            <div class="text-6xl sm:text-7xl font-black bg-gradient-to-br from-rose-400 to-orange-400 bg-clip-text text-transparent mb-2" id="resWrong">0</div>
+            <div class="text-sm uppercase tracking-widest text-slate-300">Неверных</div>
+          </div>
+          <div class="rounded-2xl bg-white/5 border border-white/10 p-6 text-center">
+            <div class="text-6xl sm:text-7xl font-black bg-gradient-to-br from-indigo-400 to-purple-400 bg-clip-text text-transparent mb-2" id="resPercentage">0%</div>
+            <div class="text-sm uppercase tracking-widest text-slate-300">Процент</div>
+          </div>
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="result-actions flex flex-wrap justify-center gap-4 mb-8">
+          <button id="btnRetry" class="px-6 py-4 rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-500 hover:from-indigo-600 hover:to-purple-600 font-bold text-lg shadow-xl transform hover:scale-105 transition-all">
+            🔄 Пройти снова
+          </button>
+          <button id="btnBackHome" class="px-6 py-4 rounded-2xl bg-white/10 hover:bg-white/20 border-2 border-white/20 font-semibold text-lg transform hover:scale-105 transition-all">
+            🏠 К началу
+          </button>
+        </div>
+
+        <!-- Разбор вопросов -->
+        <div class="result-card">
+          <h3 class="text-2xl font-bold mb-4 flex items-center gap-2">
+            <span>📋</span>
+            <span>Разбор вопросов</span>
+          </h3>
+          <div id="reviewList" class="space-y-3"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="text-center text-xs text-slate-400 mt-6">© 2025 Interactive Quiz • Single-file demo</footer>
+  </div>
+
+  <script>
+    // ==========================
+    // ВОПРОСЫ (30 шт. — форматы файлов Word)
+    // Формат: { q, options: [a,b,c,d], answer: 0..3, why }
+    // ==========================
+    const QUESTIONS = [
+      { q: "Какое расширение по умолчанию у документов Word (новые версии)?",
+        options: [".doc", ".docx", ".rtf", ".dot"], answer: 1,
+        why: "С Word 2007 по умолчанию используется формат OpenXML — .docx." },
+      { q: "Какой формат использовался в Word 97-2003?",
+        options: [".docx", ".doc", ".dotx", ".odt"], answer: 1,
+        why: "Формат .doc использовался в старых версиях Word до 2007 года." },
+      { q: "Что означает расширение .dotx?",
+        options: ["Документ Word", "Шаблон Word (новый формат)", "Макросодержащий документ", "Архив документов"], answer: 1,
+        why: ".dotx — это шаблон Word в формате OpenXML без макросов." },
+      { q: "Какое расширение у документа Word с поддержкой макросов?",
+        options: [".docx", ".docm", ".dotx", ".doc"], answer: 1,
+        why: ".docm — документ с включенными макросами (Macro-enabled document)." },
+      { q: "Что такое формат .rtf?",
+        options: ["Формат Microsoft", "Rich Text Format (универсальный текстовый формат)", "Формат только для чтения", "Формат резервной копии"], answer: 1,
+        why: "RTF — универсальный текстовый формат, поддерживающий форматирование и читаемый многими программами." },
+      { q: "Можно ли открыть файл .odt в Microsoft Word?",
+        options: ["Нет, только в LibreOffice", "Да, Word поддерживает формат OpenDocument", "Только после конвертации", "Только в онлайн-версии"], answer: 1,
+        why: "Word поддерживает открытие и сохранение документов в формате .odt (OpenDocument Text)." },
+      { q: "Как сохранить документ в формате PDF из Word?",
+        options: ["Файл → Сохранить как → PDF", "Только через Adobe Acrobat", "Файл → Экспорт → Создать PDF/XPS", "Невозможно без плагинов"], answer: 2,
+        why: "В Word есть встроенная функция экспорта в PDF через Файл → Экспорт." },
+      { q: "Что означает 'x' в расширениях .docx, .xlsx, .pptx?",
+        options: ["eXtended", "XML", "eXternal", "eXport"], answer: 1,
+        why: "Буква 'x' означает XML — форматы Office Open XML используют XML-структуру." },
+      { q: "Какой формат занимает меньше места на диске?",
+        options: [".doc", ".docx", ".rtf", "Все одинаково"], answer: 1,
+        why: ".docx использует сжатие ZIP, поэтому занимает меньше места чем старый .doc или .rtf." },
+      { q: "Можно ли восстановить .docx как ZIP-архив?",
+        options: ["Нет, это зашифрованный файл", "Да, можно переименовать в .zip и открыть", "Только специальными программами", "Только поврежденные файлы"], answer: 1,
+        why: ".docx — это ZIP-архив с XML-файлами внутри. Можно переименовать расширение в .zip и посмотреть содержимое." },
+      { q: "Что означает расширение .dotm?",
+        options: ["Документ с метаданными", "Шаблон Word с поддержкой макросов", "Мобильная версия документа", "Документ с мультимедиа"], answer: 1,
+        why: ".dotm — шаблон Word в формате OpenXML с включенной поддержкой макросов." },
+      { q: "Можно ли сохранить документ Word как обычный текст (.txt)?",
+        options: ["Нет, только через сторонние программы", "Да, через Файл → Сохранить как → Обычный текст", "Только копированием в Блокнот", "Только онлайн-конвертерами"], answer: 1,
+        why: "Word позволяет сохранять документы в формате .txt, но без форматирования." },
+      { q: "Что такое формат .xml в контексте Word?",
+        options: ["Ошибочный формат", "Word XML Document — текстовый XML-формат", "Только для разработчиков", "Формат для веб-страниц"], answer: 1,
+        why: "Word может сохранять документы в формате Word XML — текстовом XML-формате." },
+      { q: "Что такое формат .xps?",
+        options: ["Extra Print Size", "XML Paper Specification — формат от Microsoft", "eXtended PostScript", "Экспортный формат Excel"], answer: 1,
+        why: "XPS — формат электронных документов от Microsoft, альтернатива PDF." },
+      { q: "Можно ли сохранить документ Word как веб-страницу?",
+        options: ["Нет, только PDF", "Да, в форматах .htm, .html, .mht", "Только через экспорт в браузер", "Только Word Online"], answer: 1,
+        why: "Word поддерживает сохранение в формате веб-страницы (.htm, .html) и веб-архива (.mht, .mhtml)." },
+      { q: "Что означает 'Режим ограниченной функциональности' при открытии файла?",
+        options: ["Файл поврежден", "Открыт старый формат .doc без конвертации", "Нет прав на редактирование", "Истек срок лицензии"], answer: 1,
+        why: "Режим ограниченной функциональности включается при открытии файлов старых форматов (.doc) без конвертации в .docx." },
+      { q: "Как конвертировать документ .doc в .docx?",
+        options: ["Только пересохранением", "Файл → Сведения → Преобразовать", "Правый клик → Конвертировать", "Невозможно без потери данных"], answer: 1,
+        why: "Функция 'Преобразовать' в меню Файл → Сведения конвертирует документ в новый формат." },
+      { q: "Где Word хранит файлы автовосстановления (.asd)?",
+        options: ["В папке с документом", "В системной папке AppData", "На OneDrive", "В корзине"], answer: 1,
+        why: "Файлы автовосстановления хранятся в системной папке AppData\\Roaming\\Microsoft\\Word." },
+      { q: "Можно ли открыть файл .wpd (WordPerfect) в Word?",
+        options: ["Нет, несовместимый формат", "Да, Word поддерживает импорт .wpd", "Только после конвертации в PDF", "Только в старых версиях Word"], answer: 1,
+        why: "Word поддерживает открытие документов WordPerfect (.wpd), хотя некоторое форматирование может потеряться." },
+      { q: "В каком формате сохраняются документы при совместной работе в Word Online?",
+        options: [".doc", ".docx", ".cloud", ".docxc"], answer: 1,
+        why: "Word Online использует стандартный формат .docx с автосохранением в OneDrive." },
+      { q: "Что произойдет при сохранении .docx как .doc?",
+        options: ["Ошибка сохранения", "Потеря некоторых современных функций и форматирования", "Файл станет больше", "Ничего не изменится"], answer: 1,
+        why: "При сохранении в старый формат .doc могут потеряться некоторые возможности, доступные только в .docx." },
+      { q: "Какой формат лучше использовать для долгосрочного хранения документов?",
+        options: [".doc", ".docx и PDF/A", ".rtf", ".txt"], answer: 1,
+        why: ".docx — открытый стандарт, а PDF/A специально разработан для архивного хранения документов." },
+      { q: "Можно ли встроить шрифты в документ Word?",
+        options: ["Нет, шрифты всегда системные", "Да, через Файл → Параметры → Сохранение", "Только при сохранении в PDF", "Только в .doc формате"], answer: 1,
+        why: "В настройках сохранения можно включить встраивание шрифтов в документ .docx." },
+      { q: "Что такое 'Строгий режим Open XML'?",
+        options: ["Режим без макросов", "Более строгая спецификация формата OOXML", "Режим защиты документа", "Режим проверки грамматики"], answer: 1,
+        why: "Строгий режим Open XML (Strict Open XML) — более строгая версия спецификации формата Office Open XML." },
+      { q: "Какое расширение у файла резервной копии Word?",
+        options: [".bak", ".wbk", ".backup", ".tmp"], answer: 1,
+        why: "Word сохраняет резервные копии с расширением .wbk (Word Backup)." },
+      { q: "Можно ли восстановить несохраненный документ Word?",
+        options: ["Нет, он удален навсегда", "Да, через Файл → Сведения → Управление документом", "Только через корзину", "Только если включено автосохранение"], answer: 1,
+        why: "Word сохраняет черновики несохраненных документов, доступные через Управление документом." },
+      { q: "Что такое формат .docx с поддержкой 'Плоского XML'?",
+        options: ["Поврежденный файл", "Формат .xml без сжатия ZIP для версионного контроля", "Формат для печати", "Упрощенная версия документа"], answer: 1,
+        why: "Flat OPC (.xml) — это несжатый XML-формат, удобный для систем версионного контроля (Git)." },
+      { q: "Как проверить, содержит ли документ макросы?",
+        options: ["По размеру файла", "По расширению .docm или через Файл → Сведения", "Открыть в Блокноте", "Макросы невидимы"], answer: 1,
+        why: "Документы с макросами имеют расширение .docm, также можно проверить в разделе Файл → Сведения → Проверить наличие проблем." },
+      { q: "Что означает сообщение 'Файл используется другим пользователем'?",
+        options: ["Файл заблокирован антивирусом", "Документ открыт в другом месте, создается временный файл блокировки (.lock)", "Файл защищен паролем", "Ошибка диска"], answer: 1,
+        why: "Word создает временный файл блокировки (~$имя.docx), когда документ открыт." },
+      { q: "В каком формате Word хранит временные файлы во время редактирования?",
+        options: [".docx", ".tmp", ".asd и .tmp", ".cache"], answer: 2,
+        why: "Word использует временные файлы с расширениями .tmp и .asd для автосохранения и восстановления." },
+      { q: "Можно ли извлечь изображения из .docx без открытия в Word?",
+        options: ["Нет, только через Word", "Да, переименовать в .zip и извлечь из папки media", "Только через специальные программы", "Изображения зашифрованы"], answer: 1,
+        why: "Изображения в .docx хранятся в папке word/media внутри ZIP-архива." },
+      { q: "Что такое формат .doc в современных версиях Word?",
+        options: ["Основной формат", "Устаревший бинарный формат для совместимости", "Текстовый формат", "Временный формат"], answer: 1,
+        why: ".doc — устаревший бинарный формат, поддерживается для обратной совместимости с Word 97-2003." },
+      { q: "Какой формат нужен для сохранения VBA-макросов в шаблоне?",
+        options: [".dotx", ".dotm", ".docx", ".template"], answer: 1,
+        why: ".dotm — формат шаблона с поддержкой макросов. .dotx не поддерживает макросы." },
+      { q: "Что происходит при сохранении документа с ошибкой 'Недостаточно памяти'?",
+        options: ["Документ не сохранится", "Word создаст временный файл восстановления", "Компьютер перезагрузится", "Файл сохранится частично"], answer: 1,
+        why: "При ошибках сохранения Word пытается создать временную копию для восстановления данных." },
+      { q: "Можно ли открыть защищенный паролем .docx без Word?",
+        options: ["Да, любым ZIP-архиватором", "Нет, содержимое зашифровано", "Да, в Google Docs", "Да, в Блокноте"], answer: 1,
+        why: "Защищенные паролем документы .docx шифруются, и их содержимое нельзя просмотреть без пароля." },
+      { q: "Какой формат использует самое сильное сжатие?",
+        options: [".doc", ".docx", ".rtf", ".txt"], answer: 1,
+        why: ".docx использует ZIP-сжатие, что делает файлы значительно меньше по сравнению с .doc и .rtf." },
+      { q: "Что такое файл ~$документ.docx?",
+        options: ["Резервная копия", "Временный файл блокировки (owner file)", "Поврежденный файл", "Файл автосохранения"], answer: 1,
+        why: "Файл с префиксом ~$ — это временный файл владельца, указывающий, что документ открыт." },
+      { q: "Можно ли редактировать .pdf в Word?",
+        options: ["Нет, PDF только для чтения", "Да, Word 2013+ может конвертировать PDF в редактируемый документ", "Только через Adobe Acrobat", "Только простой текст"], answer: 1,
+        why: "Word 2013 и новее может открывать PDF и конвертировать их в редактируемый формат .docx." },
+      { q: "Какой размер максимального документа .docx?",
+        options: ["10 МБ", "512 МБ", "Около 512 МБ (зависит от версии Word)", "Нет ограничения"], answer: 2,
+        why: "Word имеет ограничение на размер документа около 512 МБ, но практически рекомендуется меньше для производительности." },
+    ];
+
+    // ==========================
+    // УТИЛИТЫ
+    // ==========================
+    const $ = (sel) => document.querySelector(sel);
+    const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+    const shuffle = (arr) => arr.map(v=>[Math.random(),v]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]);
+
+    // ==========================
+    // СОСТОЯНИЕ
+    // ==========================
+    const state = {
+      mode: 'test', // 'test' | 'practice'
+      questions: [],
+      index: 0,
+      selected: new Map(), // qIndex -> optionIndex
+      revealed: new Set(), // вопросы, где показан ответ
+      score: 0,
+      limit: 30,
+      perQuestionSec: 45,
+      timerOn: false,
+      timeLeft: 0,
+      timerId: null,
+    };
+
+    // ==========================
+    // ЭКРАНЫ
+    // ==========================
+    const startScreen = $('#startScreen');
+    const quizScreen = $('#quizScreen');
+    const resultsScreen = $('#resultsScreen');
+
+    // Контролы
+    const btnStart = $('#btnStart');
+    const btnShuffle = $('#btnShuffle');
+    const qCountInput = $('#qCountInput');
+    const qTimeInput = $('#qTimeInput');
+    const timerToggle = $('#timerToggle');
+
+    const modeTest = $('#modeTest');
+    const modePractice = $('#modePractice');
+    const btnReset = $('#btnReset');
+
+    // Квиз
+    const progressBar = $('#progressBar');
+    const progressText = $('#progressText');
+    const scoreText = $('#scoreText');
+    const timerText = $('#timerText');
+    const questionText = $('#questionText');
+    const optionsBox = $('#options');
+    const explanation = $('#explanation');
+
+    const btnPrev = $('#btnPrev');
+    const btnNext = $('#btnNext');
+    const btnSkip = $('#btnSkip');
+    const btnReveal = $('#btnReveal');
+
+    // Результаты
+    const resultSummary = $('#resultSummary');
+    const resCorrect = $('#resCorrect');
+    const resWrong = $('#resWrong');
+    const reviewList = $('#reviewList');
+    const btnRetry = $('#btnRetry');
+    const btnBackHome = $('#btnBackHome');
+
+    // ==========================
+    // ИНИЦИАЛИЗАЦИЯ
+    // ==========================
+    function init() {
+      state.questions = QUESTIONS.slice(0, 30);
+      applySettingsFromInputs();
+      renderStart();
+    }
+
+    function applySettingsFromInputs() {
+      state.limit = clamp(parseInt(qCountInput.value||30,10), 5, 30);
+      state.perQuestionSec = clamp(parseInt(qTimeInput.value||45,10), 10, 180);
+      state.timerOn = !!timerToggle.checked;
+    }
+
+    function clamp(v, min, max){ return Math.max(min, Math.min(max, v)); }
+
+    function resetAll() {
+      state.index = 0;
+      state.selected.clear();
+      state.revealed.clear();
+      state.score = 0;
+      stopTimer();
+      scoreText.textContent = '0';
+      timerText.textContent = '—';
+    }
+
+    function startQuiz() {
+      applySettingsFromInputs();
+      resetAll();
+      const picked = state.questions.slice(0);
+      if (picked.length > state.limit) picked.length = state.limit;
+      // фиксируем порядок, можно было бы перемешать тут
+      state.questions = picked;
+      showQuiz();
+      renderQuestion();
+      if (state.timerOn) startTimer();
+    }
+
+    function showStart() {
+      startScreen.classList.remove('hidden');
+      quizScreen.classList.add('hidden');
+      resultsScreen.classList.add('hidden');
+    }
+    function showQuiz() {
+      startScreen.classList.add('hidden');
+      quizScreen.classList.remove('hidden');
+      resultsScreen.classList.add('hidden');
+    }
+    function showResults() {
+      startScreen.classList.add('hidden');
+      quizScreen.classList.add('hidden');
+      resultsScreen.classList.remove('hidden');
+    }
+
+    // ==========================
+    // РЕНДЕР ВОПРОСА
+    // ==========================
+    function renderStart(){
+      showStart();
+    }
+
+    function renderQuestion(){
+      const idx = state.index;
+      const q = state.questions[idx];
+      progressText.textContent = `${idx+1} / ${state.questions.length}`;
+      const pct = ((idx) / state.questions.length) * 100;
+      progressBar.style.width = `${pct}%`;
+
+      questionText.textContent = q.q;
+      optionsBox.innerHTML = '';
+      explanation.classList.add('hidden');
+      explanation.textContent = '';
+
+      q.options.forEach((opt, i) => {
+        const chosen = state.selected.get(idx);
+        const base = 'flex items-center gap-3 p-4 rounded-xl border bg-white/5 border-white/10 hover:bg-white/10 transition cursor-pointer';
+        const btn = document.createElement('button');
+        btn.className = base;
+        btn.innerHTML = `
+          <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 border border-white/10">${String.fromCharCode(65+i)}</span>
+          <span class="text-left">${opt}</span>
+        `;
+        btn.onclick = () => pickOption(i);
+        // подсветка выбранного
+        if (chosen === i) {
+          btn.classList.add('ring-2','ring-indigo-400','bg-white/10');
+        }
+        optionsBox.appendChild(btn);
+      });
+
+      // обновим кнопки
+      btnPrev.disabled = (idx===0);
+      btnNext.textContent = (idx===state.questions.length-1) ? 'Завершить' : 'Далее';
+      btnSkip.disabled = (idx===state.questions.length-1);
+      btnReveal.disabled = false;
+    }
+
+    function pickOption(i){
+      const idx = state.index;
+      const q = state.questions[idx];
+      state.selected.set(idx, i);
+
+      // пересчет очков (1 балл за правильный впервые выбранный ответ)
+      const prevCorrect = state.revealed.has(idx) ? null : null; // в режиме теста считаем по подтверждению переходом
+
+      // визуал
+      renderQuestion();
+
+      if (state.mode === 'practice') {
+        showAnswerExplanation();
+      }
+    }
+
+    function showAnswerExplanation(){
+      const idx = state.index;
+      const q = state.questions[idx];
+      const chosen = state.selected.get(idx);
+
+      // подсветка опций
+      const btns = $$('#options button');
+      btns.forEach((b, i) => {
+        b.classList.remove('ring-2','ring-emerald-400','ring-rose-400');
+        if (i === q.answer) {
+          b.classList.add('ring-2','ring-emerald-400');
+        }
+        if (typeof chosen === 'number') {
+          if (i === chosen && chosen !== q.answer) {
+            b.classList.add('ring-2','ring-rose-400');
+          }
+        }
+      });
+      explanation.classList.remove('hidden');
+      explanation.innerHTML = `<span class="font-semibold">Почему так:</span> ${q.why}`;
+    }
+
+    function confirmCurrentAndGo(nextIndex){
+      // В режиме теста: начисляем балл 1 раз, когда пользователь выбрал ответ и переходит дальше
+      const idx = state.index;
+      const q = state.questions[idx];
+      const chosen = state.selected.get(idx);
+      if (typeof chosen === 'number') {
+        if (!state.revealed.has(idx)) {
+          if (chosen === q.answer) state.score += 1;
+          state.revealed.add(idx);
+          scoreText.textContent = String(state.score);
+        }
+      }
+
+      // таймер
+      if (state.timerOn) { state.timeLeft = state.perQuestionSec; }
+
+      // переход
+      state.index = nextIndex;
+
+      if (state.index >= state.questions.length) {
+        finishQuiz();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function finishQuiz(){
+      stopTimer();
+      showResults();
+      const total = state.questions.length;
+      const correct = state.score;
+      const wrong = total - correct;
+      const pct = Math.round((correct/total)*100);
+      
+      // Обновляем числа
+      resCorrect.textContent = String(correct);
+      resWrong.textContent = String(wrong);
+      $('#resPercentage').textContent = `${pct}%`;
+      
+      // Определяем результат и сообщения
+      let title, message, emoji, cardClass;
+      if (pct === 100) {
+        title = '🎉 НЕВЕРОЯТНО! ИДЕАЛЬНО! 🎉';
+        message = 'Вы — абсолютный мастер Microsoft Word! Безупречный результат!';
+        emoji = '👑';
+        cardClass = 'result-perfect';
+        createConfetti(100); // Больше конфетти для идеального результата
+      } else if (pct >= 80) {
+        title = '🌟 ОТЛИЧНО! 🌟';
+        message = 'Превосходный результат! Вы отлично разбираетесь в форматах Word!';
+        emoji = '🏆';
+        cardClass = 'result-good';
+        createConfetti(50);
+      } else if (pct >= 60) {
+        title = '👍 ХОРОШО!';
+        message = 'Хороший результат! Немного практики и будет идеально!';
+        emoji = '⭐';
+        cardClass = 'result-good';
+        createConfetti(30);
+      } else if (pct >= 40) {
+        title = '📚 НЕПЛОХО';
+        message = 'Есть что подучить, но вы на правильном пути!';
+        emoji = '📖';
+        cardClass = 'result-poor';
+      } else {
+        title = '💪 ПРОДОЛЖАЙТЕ УЧИТЬСЯ';
+        message = 'Не расстраивайтесь! Попробуйте еще раз и изучите материал!';
+        emoji = '🎯';
+        cardClass = 'result-poor';
+      }
+      
+      $('#resultTitle').textContent = title;
+      $('#resultMessage').textContent = message;
+      $('#trophyIcon').textContent = emoji;
+      $('#statsCard').className = `rounded-2xl border border-white/20 p-6 text-center backdrop-blur-sm ${cardClass}`;
+      
+      resultSummary.textContent = `Вы ответили правильно на ${correct} из ${total} вопросов`;
+
+      // Обзор
+      reviewList.innerHTML = '';
+      state.questions.forEach((q, i) => {
+        const chosen = state.selected.get(i);
+        const ok = chosen === q.answer;
+        const card = document.createElement('div');
+        card.className = `p-4 rounded-xl border ${ok? 'border-emerald-400/30 bg-emerald-400/10':'border-rose-400/30 bg-rose-400/10'}`;
+        card.innerHTML = `
+          <div class="flex items-center gap-2 text-sm text-slate-300 mb-1">
+            <span class="text-2xl">${ok ? '✅' : '❌'}</span>
+            <span>Вопрос ${i+1}</span>
+          </div>
+          <div class="font-semibold mb-2">${q.q}</div>
+          <div class="text-sm">Ваш ответ: ${typeof chosen==='number' ? escapeHtml(q.options[chosen]) : '<em>нет ответа</em>'}</div>
+          <div class="text-sm">Правильный: <span class="font-semibold">${escapeHtml(q.options[q.answer])}</span></div>
+          <div class="mt-2 text-sm text-slate-300">${q.why}</div>
+        `;
+        reviewList.appendChild(card);
+      });
+    }
+    
+    function createConfetti(count) {
+      const colors = ['#6366f1', '#8b5cf6', '#ec4899', '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#14b8a6'];
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          const confetti = document.createElement('div');
+          confetti.className = 'confetti';
+          confetti.style.left = Math.random() * 100 + '%';
+          confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          confetti.style.animationDelay = Math.random() * 0.5 + 's';
+          confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+          document.body.appendChild(confetti);
+          
+          setTimeout(() => confetti.remove(), 4000);
+        }, i * 30);
+      }
+    }
+
+    function startTimer(){
+      state.timeLeft = state.perQuestionSec;
+      timerText.textContent = String(state.timeLeft);
+      const timerContainer = timerText.closest('.timer-container');
+      if (timerContainer) timerContainer.classList.remove('timer-warning');
+      stopTimer();
+      state.timerId = setInterval(() => {
+        state.timeLeft -= 1;
+        timerText.textContent = String(Math.max(0, state.timeLeft));
+        
+        // Добавляем анимацию предупреждения когда осталось мало времени
+        const timerContainer = timerText.closest('.timer-container');
+        if (state.timeLeft <= 10 && state.timeLeft > 0) {
+          if (timerContainer) timerContainer.classList.add('timer-warning');
+        } else {
+          if (timerContainer) timerContainer.classList.remove('timer-warning');
+        }
+        
+        if (state.timeLeft <= 0) {
+          // Автопереход как "пропуск"
+          const next = Math.min(state.index+1, state.questions.length);
+          confirmCurrentAndGo(next);
+        }
+      }, 1000);
+    }
+    function stopTimer(){
+      if (state.timerId) clearInterval(state.timerId);
+      state.timerId = null;
+    }
+
+    // ==========================
+    // СОБЫТИЯ UI
+    // ==========================
+    btnStart.addEventListener('click', () => {
+      startQuiz();
+    });
+
+    btnShuffle.addEventListener('click', () => {
+      state.questions = shuffle(QUESTIONS).slice(0,30);
+      qCountInput.value = 30;
+      renderStart();
+    });
+
+    qCountInput.addEventListener('change', applySettingsFromInputs);
+    qTimeInput.addEventListener('change', applySettingsFromInputs);
+    timerToggle.addEventListener('change', applySettingsFromInputs);
+
+    modeTest.addEventListener('click', () => {
+      state.mode = 'test';
+      modeTest.classList.add('bg-white/10');
+      modePractice.classList.remove('bg-white/10');
+    });
+    modePractice.addEventListener('click', () => {
+      state.mode = 'practice';
+      modePractice.classList.add('bg-white/10');
+      modeTest.classList.remove('bg-white/10');
+    });
+
+    btnReset.addEventListener('click', () => {
+      resetAll();
+      renderStart();
+    });
+
+    btnPrev.addEventListener('click', () => {
+      if (state.index>0) { state.index -= 1; renderQuestion(); }
+    });
+    btnNext.addEventListener('click', () => {
+      const next = state.index + 1;
+      confirmCurrentAndGo(next);
+    });
+    btnSkip.addEventListener('click', () => {
+      state.selected.delete(state.index);
+      const next = state.index + 1;
+      confirmCurrentAndGo(next);
+    });
+    btnReveal.addEventListener('click', () => {
+      showAnswerExplanation();
+      state.revealed.add(state.index);
+    });
+
+    btnRetry.addEventListener('click', () => {
+      showStart();
+      startQuiz();
+    });
+    btnBackHome.addEventListener('click', () => {
+      resetAll();
+      showStart();
+    });
+
+    // ==========================
+    // ВСПОМОГАТЕЛЬНОЕ
+    // ==========================
+    function escapeHtml(s){
+      return String(s)
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'",'&#39;');
+    }
+
+    // Запуск
+    init();
+  </script>
+</body>
+</html>
